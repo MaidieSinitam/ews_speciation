@@ -125,8 +125,67 @@ for (n in abrupt){
 #write.table(df, "fit_ratios.txt", sep=" ", dec=".", row.names=FALSE, col.names=FALSE)
 
 
-
-
+# get a data frame with a column for each metric for one run
+getMetrics <-function(n, cut=FALSE){
+  
+  if (n %in% abrupt){
+    ext = "A"
+    N = which(abrupt == n)
+    if (cut == FALSE){
+      end = lenA[N]
+      cut = lenA[N]
+    } else {
+      end = specTimeRowA[N]
+      cut = specTimeRowA[N]
+    }
+    Nu = 2+(N-1)*4
+    Nu3 = 2+(N-1)*2
+    
+  } else if (n %in% gradual) {
+    ext = "G"
+    N = which(gradual == n)
+    if (cut == FALSE){
+      end = lenG[N]
+      cut = lenG[N]
+    } else {
+      end = timeToSpecRowG[N]
+      cut = timeToSpecRowG[N]
+    }
+    Nu = 2+(N-1)*4
+    Nu3 = 2+(N-1)*2
+  }
+  
+  time = read.table(paste("./Run",n,"/EffectiveMigrationRates.txt", sep=""), sep=" ")[1:cut,1]
+  # me
+  f2 = read.table(paste("./Run",n,"/EffectiveMigrationRates.txt", sep=""), sep=" ")[1:cut,2]
+  # wres/wimm
+  f3 = read.table( paste("fitnessRatios",ext,".txt", sep=""), sep=" ")[1:end,Nu3]
+  # wmax/wres
+  f4 = read.table( paste("fitnessRatios",ext,".txt", sep=""), sep=" ")[1:end,Nu3+1]
+  # mean fit all res
+  f5 = read.table(paste("./Run",n,"/EffectiveMigrationRates.txt", sep=""), sep=" ")[1:cut,7]
+  # mean fit 200 random indiv
+  f6 = read.table( paste("randomFitness",ext,".txt", sep=""), sep=" ")[1:end,Nu]
+  # Fst
+  f7 = read.table( paste("cleanedFst",ext,".txt", sep=""), sep=" ")[1:end,Nu]
+  #f7 = read.table( paste("Fst_sel",ext,".txt", sep=""), sep=" ")[1:end,N]
+  # DXY
+  f8 = read.csv(paste("./Run",n,"/DXYtimeSeries.csv", sep=""), sep=",", comment.char = "T", header=FALSE)[1:cut,2]
+  f9 = read.csv(paste("./Run",n,"/DXYtimeSeries.csv", sep=""), sep=",", comment.char = "T", header=FALSE)[1:cut,3]
+  f10 = read.csv(paste("./Run",n,"/DXYtimeSeries.csv", sep=""), sep=",", comment.char = "T", header=FALSE)[1:cut,4]
+  # Correlation allelic states for sel sites
+  f11 = read.table(paste("./Run",n,"/EffectiveMigrationRates.txt", sep=""), sep=" ")[1:cut,25]
+  # Nb variable selected loci
+  f12 = read.table(paste("./Run",n,"/NumberVariableLoci.txt", sep=""), sep=" ")[1:cut,2]
+  f13 = read.table(paste("./Run",n,"/NumberVariableLoci.txt", sep=""), sep=" ")[1:cut,3]
+  f14 = read.table(paste("./Run",n,"/NumberVariableLoci.txt", sep=""), sep=" ")[1:cut,4]
+  
+  #f8 = f8*f12
+  
+  out = data.frame(time, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14)
+  colnames(out) = c("time", "me", "wreswimm", "wmaxwres", "fitall", "fitrand", "fst", "dxyall", "dxysel", "dxyneut", "ld", "nbloci", "nblocisel", "nblocineut")
+  return(out)
+}
 
 
 # function to calculate the Spearman correlation between two metrics of the same simulation output
@@ -371,7 +430,8 @@ for (n in abrupt){
 
 
 
-########################################################
+#########################################################################################
+
 # plot Figure 3 : Correlation plots
 library(ggplot2)
 library(ggpubr)
@@ -496,6 +556,86 @@ ggarrange(A,B,D,C,
           labels = c("A", "B", "C", "D"),
           ncol = 2, nrow = 2)
 
+
+
+
+###################################################################################################
+
+# Fig 5
+
+F = getMetrics(206321)
+T = timeToSpecA[1]
+
+F2 = getMetrics(206321, cut=TRUE)
+
+A <- ggplot(data.frame( "x" = F$time, "y" = F$me), aes(x=x, y=y))+
+  geom_line(color = "#CD5C5C")+
+  geom_vline(xintercept = T, linetype="dotted", color = "#585858")+
+  labs(title="Effective migration rate", x="Generations", y="eff mig rate")
+A2 <- ggplot(data.frame( "x" = F2$time, "y" = F2$me), aes(x=x, y=y))+
+  geom_line(color = "#CD5C5C")+
+  geom_vline(xintercept = T, linetype="dotted", color = "#585858")+
+  labs(title="  ", x="Generations", y="eff mig rate")
+
+B <- ggplot(data.frame( "x" = F$time, "y" = F$fst), aes(x=x, y=y))+
+  geom_line(color = "#FF8C00")+
+  geom_vline(xintercept = T, linetype="dotted", color = "#585858")+
+  labs(title="Fst", x="Generations", y="Fst")
+B2 <- ggplot(data.frame( "x" = F2$time, "y" = F2$fst), aes(x=x, y=y))+
+  geom_line(color = "#FF8C00")+
+  geom_vline(xintercept = T, linetype="dotted", color = "#585858")+
+  labs(title="  ", x="Generations", y="Fst")
+
+C = ggplot(data.frame( "x" = F$time, "y" = F$fitrand), aes(x=x, y=y))+
+  geom_line(color = "#BDB76B")+
+  geom_vline(xintercept = T, linetype="dotted", color = "#585858")+
+  labs(title="Mean fitness", x="Generations", y="mean fitness")
+C2 = ggplot(data.frame( "x" = F2$time, "y" = F2$fitrand), aes(x=x, y=y))+
+  geom_line(color = "#BDB76B")+
+  geom_vline(xintercept = T, linetype="dotted", color = "#585858")+
+  labs(title="  ", x="Generations", y="Mean fitness")+
+  ylim(0,4)
+
+D <- ggplot(data.frame( "x" = F$time, "y" = F$dxysel), aes(x=x, y=y))+
+  geom_line(color = "#4B0082")+
+  geom_vline(xintercept = T, linetype="dotted", color = "#585858")+
+  labs(title="DXY", x="Generations", y="DXY")
+D2 <- ggplot(data.frame( "x" = F2$time, "y" = F2$dxysel), aes(x=x, y=y))+
+  geom_line(color = "#4B0082")+
+  geom_vline(xintercept = T, linetype="dotted", color = "#585858")+
+  labs(title="  ", x="Generations", y="DXY")
+
+E <- ggplot(data.frame( "x" = F$time, "y" = F$ld), aes(x=x, y=y))+
+  geom_line(color = "#2E8B57")+
+  geom_vline(xintercept = T, linetype="dotted", color = "#585858")+
+  labs(title="LD", x="Generations", y="LD")
+E2 <- ggplot(data.frame( "x" = F2$time, "y" = F2$ld), aes(x=x, y=y))+
+  geom_line(color = "#2E8B57")+
+  geom_vline(xintercept = T, linetype="dotted", color = "#585858")+
+  labs(title="  ", x="Generations", y="LD")
+
+G <- ggplot(data.frame( "x" = F$time, "y" = F$nblocisel), aes(x=x, y=y))+
+  geom_line(color = "#1E90FF")+
+  geom_vline(xintercept = T, linetype="dotted", color = "#585858")+
+  #  scale_linetype_manual(values=c("solid", "twodash", "dashed", "dotdash", "dashed"))+
+  labs(title="Nb of selected variable loci", x="Generations", y="Nb loci")+
+  ylim(-50, 1000)
+G2 <- ggplot(data.frame( "x" = F2$time, "y" = F2$nblocisel), aes(x=x, y=y))+
+  geom_line(color = "#1E90FF")+
+  geom_vline(xintercept = T, linetype="dotted", color = "#585858")+
+  #  scale_linetype_manual(values=c("solid", "twodash", "dashed", "dotdash", "dashed"))+
+  labs(title="  ", x="Generations", y="Nb loci")
+
+
+ggarrange(A,A2,B,B2,
+          labels = c("A", "", "B", ""),
+          ncol = 2, nrow = 2)
+ggarrange(C,C2,D,D2,
+          labels = c("C", "", "C", ""),
+          ncol = 2, nrow = 2)
+ggarrange(E,E2,G,G2,
+          labels = c("E", "", "F", ""),
+          ncol = 2, nrow = 2)
 
 
 
