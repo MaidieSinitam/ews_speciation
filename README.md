@@ -25,6 +25,6 @@ We analysed simulation outputs from the Build-up-to-Speciation ($BU2S$) model. T
 ## Code
 
 * `preliminary_analysis.R`: code to retrieve the relevant metrics of differentiation from the raw simulation outputs and calculate the correlation between the metrics
-* `analysis_dataser.R`: code to calculate the moving autocorrelation-at-lag-1 and standard deviation of the differentiation metrics. These calculations needs a lot of computing power.
-* `ews_analysis.R`: code to calculate the significance of the results using the area under the curve (AUC).
+* `ews_analysis.R`: code to calculate the moving autocorrelation-at-lag-1 and standard deviation of the differentiation metrics. These calculations needs a lot of computing power.
+* `signif_analysis.R`: code to calculate the significance of the results using the area under the curve (AUC).
 
